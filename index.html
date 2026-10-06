@@ -74,7 +74,9 @@
                 flex: 1;
                 min-height: 0;
                 display: grid;
-                grid-template-columns: 300px 1fr;
+                grid-template-columns: 300px minmax(0, 1fr);
+                grid-template-rows: minmax(0, 1fr); /* the row fills main instead of growing with content */
+                overflow: hidden;
                 width: 100%;
                 max-width: 1240px;
                 margin: 0 auto;
@@ -136,6 +138,7 @@
                 flex-direction: column;
                 min-width: 0;
                 min-height: 0;
+                height: 100%;
             }
             #messages {
                 flex: 1;
@@ -145,6 +148,9 @@
                 display: flex;
                 flex-direction: column;
                 gap: 1.25rem;
+            }
+            #messages > * {
+                flex-shrink: 0; /* never squash a turn to fit; scroll instead */
             }
             .empty {
                 margin: auto;
@@ -373,6 +379,7 @@
                 }
                 main {
                     display: block;
+                    overflow: visible;
                 }
                 #messages {
                     min-height: 50vh;
@@ -625,13 +632,14 @@
                 input.value = "";
                 sendBtn.disabled = true;
 
-                messages.appendChild(el("div", "turn-user", esc(text)));
+                const userBubble = el("div", "turn-user", esc(text));
+                messages.appendChild(userBubble);
                 const turn = el("div", "turn-agent");
                 const calls = el("div", "calls");
                 const answer = el("div", "answer pending", "Working on it: fetching data and running the numbers…");
                 turn.append(calls, answer);
                 messages.appendChild(turn);
-                messages.scrollTop = messages.scrollHeight;
+                turn.scrollIntoView({ block: "end", behavior: "smooth" });
 
                 try {
                     const res = await fetch("/chat", {
@@ -651,8 +659,9 @@
                     answer.classList.add("failed");
                 }
                 sendBtn.disabled = false;
-                input.focus();
-                messages.scrollTop = messages.scrollHeight;
+                input.focus({ preventScroll: true });
+                // Bring the new turn into view from its top, so you read the question, tool cards, then the answer.
+                userBubble.scrollIntoView({ block: "start", behavior: "smooth" });
             }
 
             document.getElementById("composer").addEventListener("submit", (e) => {
