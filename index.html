@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Vol Desk</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans+Condensed:wght@600&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            :root {
+                --paper: #f3f5f7;
+                --sheet: #ffffff;
+                --ink: #14213d;
+                --muted: #5b6b7f;
+                --rule: #d5dce4;
+                --chart: #0e7c86;
+                --chart-soft: #d9eef0;
+                --gain: #2e7d4f;
+                --loss: #b23a48;
+                --radius: 6px;
+            }
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                font-family: "IBM Plex Sans", system-ui, sans-serif;
+                font-variant-numeric: tabular-nums;
+                background: var(--paper);
+                color: var(--ink);
+                line-height: 1.5;
+                min-height: 100vh;
+            }
+            :focus-visible {
+                outline: 2px solid var(--chart);
+                outline-offset: 2px;
+            }
+
+            /* ---------- Header ---------- */
+            header {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid var(--rule);
+                background: var(--sheet);
+            }
+            header svg {
+                flex: none;
+            }
+            header h1 {
+                font-family: "IBM Plex Sans Condensed", sans-serif;
+                font-size: 1.5rem;
+                font-weight: 600;
+                letter-spacing: -0.01em;
+            }
+            header p {
+                color: var(--muted);
+                font-size: 0.95rem;
+            }
+
+            /* ---------- Layout ---------- */
+            body {
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+            }
+            main {
+                flex: 1;
+                min-height: 0;
+                display: grid;
+                grid-template-columns: 300px 1fr;
+                width: 100%;
+                max-width: 1240px;
+                margin: 0 auto;
+            }
+            aside {
+                padding: 1.5rem;
+                border-right: 1px solid var(--rule);
+                font-size: 0.92rem;
+                overflow-y: auto;
+            }
+            aside h2 {
+                font-size: 1rem;
+                font-weight: 600;
+                margin: 1.5rem 0 0.5rem;
+            }
+            aside h2:first-child {
+                margin-top: 0;
+            }
+            aside p {
+                color: var(--muted);
+            }
+            .prompts {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .prompts button {
+                text-align: left;
+                font: inherit;
+                color: var(--ink);
+                background: var(--sheet);
+                border: 1px solid var(--rule);
+                border-radius: var(--radius);
+                padding: 0.6rem 0.75rem;
+                cursor: pointer;
+            }
+            .prompts button:hover {
+                border-color: var(--chart);
+            }
+            dl {
+                display: grid;
+                gap: 0.4rem;
+            }
+            dt {
+                font-weight: 600;
+            }
+            dd {
+                color: var(--muted);
+                margin-bottom: 0.25rem;
+            }
+            .fineprint {
+                font-size: 0.8rem;
+                margin-top: 1.5rem;
+            }
+
+            /* ---------- Chat ---------- */
+            #chat {
+                display: flex;
+                flex-direction: column;
+                min-width: 0;
+                min-height: 0;
+            }
+            #messages {
+                flex: 1;
+                min-height: 0;
+                overflow-y: auto;
+                padding: 1.5rem;
+                display: flex;
+                flex-direction: column;
+                gap: 1.25rem;
+            }
+            .empty {
+                margin: auto;
+                max-width: 34rem;
+                text-align: center;
+                color: var(--muted);
+            }
+            .empty svg {
+                margin-bottom: 1rem;
+            }
+            .empty strong {
+                color: var(--ink);
+                display: block;
+                font-size: 1.15rem;
+                margin-bottom: 0.25rem;
+            }
+            .turn-user {
+                align-self: flex-end;
+                max-width: 75%;
+                background: var(--ink);
+                color: #fff;
+                padding: 0.6rem 0.9rem;
+                border-radius: var(--radius) var(--radius) 0 var(--radius);
+            }
+            .turn-agent {
+                align-self: flex-start;
+                max-width: 92%;
+                width: 100%;
+            }
+            .answer {
+                background: var(--sheet);
+                border: 1px solid var(--rule);
+                border-radius: var(--radius);
+                padding: 0.9rem 1.1rem;
+            }
+            .answer > * + * {
+                margin-top: 0.6rem;
+            }
+            .answer ul,
+            .answer ol {
+                padding-left: 1.25rem;
+            }
+            .answer.pending {
+                color: var(--muted);
+            }
+            .answer.failed {
+                border-color: var(--loss);
+            }
+
+            /* ---------- Tool call cards ---------- */
+            .calls {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                margin-bottom: 0.6rem;
+            }
+            details.call {
+                background: var(--sheet);
+                border: 1px solid var(--rule);
+                border-left: 3px solid var(--chart);
+                border-radius: var(--radius);
+                font-size: 0.88rem;
+            }
+            details.call.error {
+                border-left-color: var(--loss);
+            }
+            details.call summary {
+                cursor: pointer;
+                padding: 0.5rem 0.75rem;
+                color: var(--muted);
+                list-style-position: inside;
+            }
+            details.call summary b {
+                color: var(--ink);
+                font-weight: 600;
+            }
+            .call-body {
+                padding: 0 0.75rem 0.75rem;
+            }
+            .viz {
+                margin-bottom: 0.6rem;
+                max-width: 640px;
+            }
+            .viz svg {
+                display: block;
+            }
+            .stats {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.4rem 1.5rem;
+                margin-bottom: 0.5rem;
+            }
+            .stat span {
+                display: block;
+                color: var(--muted);
+                font-size: 0.78rem;
+            }
+            .stat b {
+                font-size: 1.05rem;
+                font-weight: 600;
+            }
+            table {
+                border-collapse: collapse;
+                width: 100%;
+                font-size: 0.82rem;
+            }
+            th,
+            td {
+                padding: 0.25rem 0.5rem;
+                text-align: right;
+                border-bottom: 1px solid var(--rule);
+            }
+            th {
+                color: var(--muted);
+                font-weight: 500;
+            }
+            tr.atm td {
+                background: var(--chart-soft);
+                font-weight: 600;
+            }
+            .bar-row {
+                display: grid;
+                grid-template-columns: 5.5rem 1fr 6rem;
+                align-items: center;
+                gap: 0.5rem;
+                font-size: 0.82rem;
+                margin: 0.15rem 0;
+            }
+            .bar-track {
+                position: relative;
+                height: 0.8rem;
+                background: var(--paper);
+            }
+            .bar-track::after {
+                content: "";
+                position: absolute;
+                left: 50%;
+                top: -2px;
+                bottom: -2px;
+                width: 1px;
+                background: var(--muted);
+            }
+            .bar {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+            }
+            .bar-row .val {
+                text-align: right;
+            }
+            .gain {
+                color: var(--gain);
+            }
+            .loss {
+                color: var(--loss);
+            }
+            details.raw summary {
+                cursor: pointer;
+                color: var(--muted);
+                font-size: 0.8rem;
+            }
+            details.raw pre {
+                font-size: 0.75rem;
+                white-space: pre-wrap;
+                word-break: break-word;
+                background: var(--paper);
+                padding: 0.5rem;
+                margin-top: 0.4rem;
+                max-height: 240px;
+                overflow: auto;
+            }
+            .errmsg {
+                color: var(--loss);
+            }
+
+            /* ---------- Composer ---------- */
+            form {
+                display: flex;
+                gap: 0.5rem;
+                padding: 1rem 1.5rem 1.25rem;
+                border-top: 1px solid var(--rule);
+                background: var(--paper);
+            }
+            #input {
+                flex: 1;
+                min-width: 0;
+                font: inherit;
+                padding: 0.7rem 0.9rem;
+                border: 1px solid var(--rule);
+                border-radius: var(--radius);
+                background: var(--sheet);
+                color: var(--ink);
+            }
+            form button {
+                font: inherit;
+                font-weight: 600;
+                padding: 0.7rem 1.2rem;
+                border: none;
+                border-radius: var(--radius);
+                background: var(--ink);
+                color: #fff;
+                cursor: pointer;
+            }
+            form button.secondary {
+                background: transparent;
+                color: var(--ink);
+                border: 1px solid var(--rule);
+                font-weight: 500;
+            }
+            form button:disabled {
+                opacity: 0.4;
+                cursor: default;
+            }
+
+            @media (max-width: 820px) {
+                main {
+                    grid-template-columns: 1fr;
+                }
+                aside {
+                    border-right: none;
+                    border-bottom: 1px solid var(--rule);
+                }
+                body {
+                    display: block;
+                    height: auto;
+                }
+                main {
+                    display: block;
+                }
+                #messages {
+                    min-height: 50vh;
+                    overflow: visible;
+                }
+                form {
+                    position: sticky;
+                    bottom: 0;
+                    flex-wrap: wrap;
+                }
+                #input {
+                    flex-basis: 100%;
+                }
+                form button {
+                    flex: 1;
+                }
+                .turn-user,
+                .turn-agent {
+                    max-width: 100%;
+                }
+                header,
+                aside,
+                #messages,
+                form {
+                    padding-left: 1rem;
+                    padding-right: 1rem;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <svg width="40" height="28" viewBox="0 0 40 28" aria-hidden="true">
+                <path d="M2 4 C 10 22, 22 25, 38 14" fill="none" stroke="#0E7C86" stroke-width="3" stroke-linecap="round" />
+                <circle cx="20" cy="22.4" r="3" fill="#14213D" />
+            </svg>
+            <div>
+                <h1>Vol Desk</h1>
+                <p>An options and volatility analyst that prices, stress-tests, and explains with live market data.</p>
+            </div>
+        </header>
+
+        <main>
+            <aside>
+                <h2>What it does</h2>
+                <p>
+                    Ask about any US stock, ETF, or index with listed options. Vol Desk pulls live quotes from Cboe,
+                    backs out implied volatility with its own Black-Scholes solver, and runs what-if scenarios on a
+                    position. Every number comes from a tool, never from the language model's memory, and each tool
+                    call is shown above the answer.
+                </p>
+
+                <h2>Try asking</h2>
+                <div class="prompts">
+                    <button type="button">What's the implied vol on SPY right now, and how much does the market expect it to move this month?</button>
+                    <button type="button">How steep is the put skew on QQQ? Is the market scared of a drop?</button>
+                    <button type="button">I'm long 5 SPY at-the-money calls for next month. What if SPY drops 3% and vol rises 2 points? How do I hedge?</button>
+                    <button type="button">A 30-day $200 put on a $210 stock trades at $3.10. What vol is that pricing in?</button>
+                </div>
+
+                <h2>Words you'll see</h2>
+                <dl>
+                    <dt>Implied vol</dt>
+                    <dd>The market's forecast of how much a price will move over a year, read out of option prices.</dd>
+                    <dt>Skew</dt>
+                    <dd>How much more crash protection costs than upside bets, in vol points.</dd>
+                    <dt>Delta, vega, theta</dt>
+                    <dd>How much an option's price changes for a $1 stock move, a 1-point vol rise, and one day passing.</dd>
+                    <dt>Delta hedge</dt>
+                    <dd>Buying or selling stock so small moves in the price no longer change your P&amp;L.</dd>
+                </dl>
+
+                <p class="fineprint">
+                    Quotes are about 15 minutes delayed. Black-Scholes treats options as European and ignores dividends;
+                    the risk-free rate is assumed at 4%. For learning and analysis, not investment advice.
+                </p>
+            </aside>
+
+            <section id="chat" aria-label="Conversation">
+                <div id="messages" aria-live="polite">
+                    <div class="empty" id="empty">
+                        <svg width="120" height="60" viewBox="0 0 120 60" aria-hidden="true">
+                            <line x1="60" y1="4" x2="60" y2="56" stroke="#D5DCE4" stroke-dasharray="3 3" />
+                            <path d="M6 8 C 30 46, 70 54, 114 30" fill="none" stroke="#0E7C86" stroke-width="3" stroke-linecap="round" />
+                        </svg>
+                        <strong>Ask about a ticker, an option, or a what-if.</strong>
+                        Pick a question on the left to see how it works, or write your own. Follow-ups remember the
+                        conversation, so you can say "now try a 5% drop" without repeating yourself.
+                    </div>
+                </div>
+                <form id="composer">
+                    <input id="input" aria-label="Your question" type="text" autocomplete="off" placeholder="e.g. What's TSLA's implied vol for next month?" />
+                    <button id="send" type="submit">Ask</button>
+                    <button id="reset" type="button" class="secondary" title="Start a new conversation">New chat</button>
+                </form>
+            </section>
+        </main>
+
+        <script>
+            const messages = document.getElementById("messages");
+            const input = document.getElementById("input");
+            const sendBtn = document.getElementById("send");
+            let sessionId = null;
+
+            // ---------- tiny helpers ----------
+            const esc = (s) =>
+                String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+            const fmt = (n, d = 2) => (n == null || isNaN(n) ? "—" : Number(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }));
+            const money = (n) => (n == null ? "—" : (n < 0 ? "−$" : "$") + fmt(Math.abs(n)));
+            const el = (tag, cls, html) => {
+                const e = document.createElement(tag);
+                if (cls) e.className = cls;
+                if (html != null) e.innerHTML = html;
+                return e;
+            };
+
+            // Minimal, safe Markdown: escape first, then bold/italic, lists, paragraphs.
+            function renderMarkdown(text) {
+                const lines = esc(text || "").split("\n");
+                let html = "", list = null;
+                const inline = (s) => s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*(?!\s)(.+?)\*/g, "$1<em>$2</em>").replace(/`(.+?)`/g, "<code>$1</code>");
+                for (const line of lines) {
+                    const ul = line.match(/^\s*[-*]\s+(.*)/), ol = line.match(/^\s*\d+\.\s+(.*)/);
+                    const kind = ul ? "ul" : ol ? "ol" : null;
+                    if (list && kind !== list) { html += `</${list}>`; list = null; }
+                    if (kind) {
+                        if (!list) { html += `<${kind}>`; list = kind; }
+                        html += `<li>${inline((ul || ol)[1])}</li>`;
+                    } else if (line.trim()) {
+                        html += `<p>${inline(line.replace(/^#+\s*/, ""))}</p>`;
+                    }
+                }
+                if (list) html += `</${list}>`;
+                return html;
+            }
+
+            // ---------- tool-call visuals ----------
+            function smileChart(r) {
+                const pts = r.smile || [];
+                if (pts.length < 2) return "";
+                const W = 640, H = 220, P = { l: 40, r: 22, t: 12, b: 26 };
+                const xs = pts.map((p) => p.strike_pct_of_spot), ys = pts.map((p) => p.implied_vol_pct);
+                const x0 = Math.min(...xs, 85), x1 = Math.max(...xs, 115);
+                const y0 = Math.floor(Math.min(...ys) - 1), y1 = Math.ceil(Math.max(...ys) + 1);
+                const X = (v) => P.l + ((v - x0) / (x1 - x0)) * (W - P.l - P.r);
+                const Y = (v) => H - P.b - ((v - y0) / (y1 - y0)) * (H - P.t - P.b);
+                const path = pts.map((p, i) => `${i ? "L" : "M"}${X(p.strike_pct_of_spot).toFixed(1)},${Y(p.implied_vol_pct).toFixed(1)}`).join(" ");
+                const dots = pts.map((p) => `<circle cx="${X(p.strike_pct_of_spot)}" cy="${Y(p.implied_vol_pct)}" r="3.5" fill="#14213D"><title>Strike ${p.strike} (${p.strike_pct_of_spot}% of spot): ${p.implied_vol_pct}% IV</title></circle>`).join("");
+                const ticks = [85, 90, 95, 100, 105, 110, 115].filter((t) => t >= x0 && t <= x1)
+                    .map((t) => `<text x="${X(t)}" y="${H - 6}" font-size="10" text-anchor="middle" fill="#5B6B7F">${t}%</text>`).join("");
+                const yt = [y0, Math.round((y0 + y1) / 2), y1]
+                    .map((t) => `<text x="${P.l - 6}" y="${Y(t) + 3}" font-size="10" text-anchor="end" fill="#5B6B7F">${t}%</text><line x1="${P.l}" x2="${W - P.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="#EEF1F4"/>`).join("");
+                return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Implied volatility smile for ${esc(r.symbol)} ${esc(r.expiration)}">
+                    ${yt}<line x1="${X(100)}" x2="${X(100)}" y1="${P.t}" y2="${H - P.b}" stroke="#D5DCE4" stroke-dasharray="3 3"/>
+                    <path d="${path}" fill="none" stroke="#0E7C86" stroke-width="2.5"/>${dots}${ticks}</svg>
+                    <div style="color:var(--muted);font-size:0.78rem">Implied vol by strike, as a % of the current price. Dashed line = at the money.</div>`;
+            }
+
+            function smileViz(r) {
+                return `<div class="stats">
+                    <div class="stat"><span>Spot</span><b>${money(r.spot)}</b></div>
+                    <div class="stat"><span>ATM implied vol</span><b>${fmt(r.atm_implied_vol_pct)}%</b></div>
+                    <div class="stat"><span>Downside skew</span><b>${r.downside_skew_pts == null ? "—" : "+" + fmt(r.downside_skew_pts) + " pts"}</b></div>
+                    <div class="stat"><span>Expected move by ${esc(r.expiration)}</span><b>±${fmt(r.expected_move_by_expiry?.pct)}%</b></div>
+                </div>${smileChart(r)}`;
+            }
+
+            function chainViz(r) {
+                const rows = (r.strikes || []).map((s) => {
+                    const atm = Math.abs(s.strike - r.spot) === Math.min(...r.strikes.map((x) => Math.abs(x.strike - r.spot)));
+                    return `<tr class="${atm ? "atm" : ""}"><td>${fmt(s.call?.mid)}</td><td>${fmt(s.call?.implied_vol_pct)}%</td>
+                        <td><b>${fmt(s.strike, s.strike % 1 ? 1 : 0)}</b></td><td>${fmt(s.put?.mid)}</td><td>${fmt(s.put?.implied_vol_pct)}%</td></tr>`;
+                }).join("");
+                return `<div class="stats"><div class="stat"><span>${esc(r.symbol)} spot</span><b>${money(r.spot)}</b></div>
+                    <div class="stat"><span>Expiration</span><b>${esc(r.expiration)}</b></div>
+                    <div class="stat"><span>Days left</span><b>${fmt(r.days_to_expiry, 1)}</b></div></div>
+                    <table><thead><tr><th>Call mid</th><th>Call IV</th><th>Strike</th><th>Put mid</th><th>Put IV</th></tr></thead><tbody>${rows}</tbody></table>`;
+            }
+
+            function priceViz(r) {
+                const g = r.greeks_per_share || {};
+                return `<div class="stats">
+                    <div class="stat"><span>Price / share</span><b>${money(r.price_per_share)}</b></div>
+                    <div class="stat"><span>Per contract</span><b>${money(r.price_per_contract)}</b></div>
+                    <div class="stat"><span>Delta</span><b>${fmt(g.delta, 3)}</b></div>
+                    <div class="stat"><span>Gamma</span><b>${fmt(g.gamma, 4)}</b></div>
+                    <div class="stat"><span>Vega / vol pt</span><b>${money(g.vega_per_vol_pt)}</b></div>
+                    <div class="stat"><span>Theta / day</span><b>${money(g.theta_per_day)}</b></div></div>`;
+            }
+
+            function scenarioViz(r) {
+                const parts = Object.entries(r.pnl_explain || {});
+                const max = Math.max(1, ...parts.map(([, v]) => Math.abs(v)));
+                const bars = parts.map(([k, v]) => {
+                    const w = (Math.abs(v) / max) * 50;
+                    const left = v >= 0 ? 50 : 50 - w;
+                    return `<div class="bar-row"><span>${k}</span><div class="bar-track"><div class="bar" style="left:${left}%;width:${w}%;background:${v >= 0 ? "var(--gain)" : "var(--loss)"}"></div></div>
+                        <span class="val ${v >= 0 ? "gain" : "loss"}">${money(v)}</span></div>`;
+                }).join("");
+                const h = r.delta_hedge || {};
+                const cls = (v) => (v >= 0 ? "gain" : "loss");
+                return `<div class="stats">
+                    <div class="stat"><span>Option P&amp;L</span><b class="${cls(r.option_pnl)}">${money(r.option_pnl)}</b></div>
+                    <div class="stat"><span>Hedge</span><b>${esc(h.hedge_trade || "—")}</b></div>
+                    <div class="stat"><span>P&amp;L if hedged</span><b class="${cls(h.hedged_total_pnl)}">${money(h.hedged_total_pnl)}</b></div></div>
+                    <div style="color:var(--muted);font-size:0.78rem;margin-bottom:0.25rem">Where the P&amp;L came from</div>${bars}`;
+            }
+
+            function ivViz(r) {
+                return `<div class="stats"><div class="stat"><span>Implied volatility</span><b>${fmt(r.implied_vol_pct)}%</b></div></div>`;
+            }
+
+            const VIZ = { get_volatility_smile: smileViz, get_option_chain: chainViz, price_option: priceViz, scenario_pnl: scenarioViz, solve_implied_volatility: ivViz };
+            const LABEL = {
+                get_volatility_smile: "Built the volatility smile",
+                get_option_chain: "Pulled live option quotes",
+                price_option: "Priced an option",
+                solve_implied_volatility: "Solved for implied vol",
+                scenario_pnl: "Ran a scenario",
+            };
+
+            function toolCard(call) {
+                let parsed = null;
+                try { parsed = JSON.parse(call.result); } catch (e) {}
+                const failed = parsed && parsed.error;
+                const card = el("details", "call" + (failed ? " error" : ""));
+                const argText = Object.entries(call.args || {}).map(([k, v]) => `${k}=${typeof v === "string" ? '"' + v + '"' : v}`).join(", ");
+                card.appendChild(el("summary", null, `<b>${esc(LABEL[call.name] || call.name)}</b> · ${esc(call.name)}(${esc(argText)})`));
+                const body = el("div", "call-body");
+                let viz = "";
+                if (failed) viz = `<p class="errmsg">${esc(parsed.error)}</p>`;
+                else if (parsed && VIZ[call.name]) {
+                    try { viz = VIZ[call.name](parsed); } catch (e) { viz = ""; }
+                }
+                if (viz) body.appendChild(el("div", "viz", viz));
+                const raw = el("details", "raw");
+                raw.appendChild(el("summary", null, "Raw arguments and result"));
+                raw.appendChild(el("pre", null, esc(JSON.stringify({ name: call.name, args: call.args, result: parsed ?? call.result }, null, 2))));
+                body.appendChild(raw);
+                card.appendChild(body);
+                card.open = !!viz; // errors stay visible too: they show how the agent recovered
+                return card;
+            }
+
+            // ---------- conversation ----------
+            async function ask(text) {
+                text = text.trim();
+                if (!text) return;
+                document.getElementById("empty")?.remove();
+                input.value = "";
+                sendBtn.disabled = true;
+
+                messages.appendChild(el("div", "turn-user", esc(text)));
+                const turn = el("div", "turn-agent");
+                const calls = el("div", "calls");
+                const answer = el("div", "answer pending", "Working on it: fetching data and running the numbers…");
+                turn.append(calls, answer);
+                messages.appendChild(turn);
+                messages.scrollTop = messages.scrollHeight;
+
+                try {
+                    const res = await fetch("/chat", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ message: text, session_id: sessionId }),
+                    });
+                    if (!res.ok) throw new Error(`The server returned ${res.status}. Try again in a moment.`);
+                    const data = await res.json();
+                    sessionId = data.session_id;
+                    for (const call of data.tool_calls || []) calls.appendChild(toolCard(call));
+                    answer.innerHTML = renderMarkdown(data.response);
+                    answer.classList.remove("pending");
+                } catch (e) {
+                    answer.textContent = "Couldn't reach Vol Desk: " + e.message;
+                    answer.classList.remove("pending");
+                    answer.classList.add("failed");
+                }
+                sendBtn.disabled = false;
+                input.focus();
+                messages.scrollTop = messages.scrollHeight;
+            }
+
+            document.getElementById("composer").addEventListener("submit", (e) => {
+                e.preventDefault();
+                if (!sendBtn.disabled) ask(input.value);
+            });
+            document.querySelectorAll(".prompts button").forEach((b) =>
+                b.addEventListener("click", () => { if (!sendBtn.disabled) ask(b.textContent); }),
+            );
+            document.getElementById("reset").addEventListener("click", async () => {
+                if (sessionId) await fetch(`/clear?session_id=${encodeURIComponent(sessionId)}`, { method: "POST" }).catch(() => {});
+                sessionId = null;
+                messages.innerHTML = "";
+                const empty = el("div", "empty", "<strong>New conversation started.</strong>Ask about a ticker, an option, or a what-if.");
+                empty.id = "empty";
+                messages.appendChild(empty);
+                input.focus();
+            });
+            input.focus();
+        </script>
+    </body>
+</html>
