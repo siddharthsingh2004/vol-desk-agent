@@ -121,6 +121,11 @@ def index():
     return FileResponse(Path(__file__).parent / "index.html")
 
 
+@app.get("/logo.png")
+def logo():
+    return FileResponse(Path(__file__).parent / "logo.png", media_type="image/png")
+
+
 @app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest):
     # Get or create the session

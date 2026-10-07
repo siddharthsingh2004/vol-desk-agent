@@ -45,19 +45,18 @@
             header {
                 display: flex;
                 align-items: center;
-                gap: 0.75rem;
+                gap: 1.25rem;
                 padding: 1rem 1.5rem;
                 border-bottom: 1px solid var(--rule);
                 background: var(--sheet);
             }
-            header svg {
-                flex: none;
-            }
             header h1 {
-                font-family: "IBM Plex Sans Condensed", sans-serif;
-                font-size: 1.5rem;
-                font-weight: 600;
-                letter-spacing: -0.01em;
+                flex: none;
+                line-height: 0;
+            }
+            header .logo {
+                height: 40px;
+                width: auto;
             }
             header p {
                 color: var(--muted);
@@ -400,6 +399,12 @@
                 .turn-agent {
                     max-width: 100%;
                 }
+                header {
+                    flex-wrap: wrap;
+                }
+                header .logo {
+                    height: 32px;
+                }
                 header,
                 aside,
                 #messages,
@@ -412,14 +417,8 @@
     </head>
     <body>
         <header>
-            <svg width="40" height="28" viewBox="0 0 40 28" aria-hidden="true">
-                <path d="M2 4 C 10 22, 22 25, 38 14" fill="none" stroke="#0E7C86" stroke-width="3" stroke-linecap="round" />
-                <circle cx="20" cy="22.4" r="3" fill="#14213D" />
-            </svg>
-            <div>
-                <h1>Vol Desk</h1>
-                <p>An options and volatility analyst that prices, stress-tests, and explains with live market data.</p>
-            </div>
+            <h1><img class="logo" src="/logo.png" alt="Vol Desk" width="185" height="40" /></h1>
+            <p>An options and volatility analyst that prices, stress-tests, and explains with live market data.</p>
         </header>
 
         <main>
