@@ -496,8 +496,17 @@
             };
 
             // Minimal, safe Markdown: escape first, then bold/italic, lists, paragraphs.
+            // Models sometimes slip into LaTeX ($\pm$\$28.30). Turn the common bits into plain symbols.
+            function unLatex(t) {
+                const sym = { pm: "±", times: "×", approx: "≈", sqrt: "√", sigma: "σ", Delta: "Δ", Gamma: "Γ", theta: "θ", le: "≤", ge: "≥", rightarrow: "→", to: "→", cdot: "·" };
+                return String(t || "")
+                    .replace(/\\([a-zA-Z]+)/g, (m, w) => (w in sym ? sym[w] : m))
+                    .replace(/\\([$%&_#])/g, "$1")
+                    .replace(/\$\s*([±×≈√σΔΓθ≤≥→·])\s*\$/g, "$1"); // only unwrap $±$-style symbols, never real prices
+            }
+
             function renderMarkdown(text) {
-                const lines = esc(text || "").split("\n");
+                const lines = esc(unLatex(text)).split("\n");
                 let html = "", list = null;
                 const inline = (s) => s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*(?!\s)(.+?)\*/g, "$1<em>$2</em>").replace(/`(.+?)`/g, "<code>$1</code>");
                 for (const line of lines) {
